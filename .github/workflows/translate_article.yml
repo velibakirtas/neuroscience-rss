@@ -1,0 +1,69 @@
+name: Seçilen Makaleleri Çevir
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "Çevrilecek makale linkleri"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  translate-articles:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.user.login == github.repository_owner &&
+       startsWith(github.event.issue.title, 'Çevir:'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları yükle
+        run: pip install -r requirements.txt
+
+      - name: Makaleleri çek ve çevir
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          INPUT_URLS: ${{ github.event.inputs.urls }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python translate_article.py
+
+      - name: Değişiklikleri kaydet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add data/ docs/
+            git commit -m "Seçilen tam makaleler çevrildi"
+            git pull --rebase
+            git push
+          else
+            echo "Değişiklik yok."
+          fi
+
+      - name: Talebi (Issue) kapat
+        if: always() && github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE_NUM: ${{ github.event.issue.number }}
+        run: |
+          COMMENT="İşlem tamamlandı."
+          if [ -f result_summary.txt ]; then
+            COMMENT=$(cat result_summary.txt)
+          fi
+          gh issue close "$ISSUE_NUM" --repo "$REPO" --comment "$COMMENT"

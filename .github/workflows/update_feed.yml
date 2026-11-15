@@ -1,0 +1,41 @@
+name: Bültenleri Çevir ve RSS Güncelle
+
+on:
+  schedule:
+    # Her 4 saatte bir kontrol et (UTC)
+    - cron: "0 */4 * * *"
+  workflow_dispatch: # İstediğiniz an el ile tetikleyebilmek için
+
+jobs:
+  update-rss:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu indir
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Bağımlılıkları yükle
+        run: pip install -r requirements.txt
+
+      - name: Bültenleri kontrol et ve çevir
+        env:
+          KTN_FEED_URL: ${{ secrets.KTN_FEED_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python translate_rss.py
+
+      - name: Değişiklikleri kaydet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add data/ docs/
+            git commit -m "Yeni çevrilmiş bültenler eklendi"
+            git push
+          else
+            echo "Değişiklik yok."
+          fi
