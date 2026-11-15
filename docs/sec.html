@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Tam Makale Çevirisi Seç</title>
+  <style>
+    :root { --bg:#f8fafc; --card:#fff; --text:#0f172a; --muted:#64748b; --border:#e2e8f0; --btn:#16a34a; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --border:#334155; --btn:#22c55e; }
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; padding:20px 14px 96px; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; }
+    main { max-width:700px; margin:0 auto; }
+    h1 { font-size:1.3rem; margin:0 0 6px; }
+    p.sub { color:var(--muted); font-size:0.9rem; margin:0 0 20px; }
+    .group { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:16px; }
+    .group h2 { font-size:1rem; margin:0 0 12px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+    .dt { font-size:0.8rem; color:var(--muted); font-weight:normal; margin-left:6px; }
+    label.row { display:flex; align-items:flex-start; gap:10px; padding:8px 6px; border-radius:6px; cursor:pointer; }
+    label.row:hover { background:rgba(100,116,139,0.08); }
+    label.row.done { opacity:0.55; cursor:default; }
+    input[type="checkbox"] { width:18px; height:18px; margin-top:3px; flex-shrink:0; }
+    label.row span { display:flex; flex-direction:column; }
+    label.row small { color:var(--muted); font-size:0.78rem; margin-top:2px; }
+    .badge { display:inline-block; font-size:0.72rem; background:#dcfce7; color:#166534; padding:1px 6px; border-radius:4px; margin-left:6px; }
+    textarea { width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--text); font-family:inherit; }
+    .bar { position:fixed; bottom:0; left:0; right:0; background:var(--card); border-top:1px solid var(--border); padding:12px 16px; display:flex; justify-content:center; }
+    button { background:var(--btn); color:#fff; border:0; border-radius:8px; padding:12px 24px; font-size:1rem; font-weight:600; cursor:pointer; width:100%; max-width:700px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>📚 Tam Makale Seçimi</h1>
+    <p class="sub">Tam metnini Feeder'a eklemek istediğiniz makaleleri işaretleyin ve alttaki butona basın.</p>
+    <p class="empty">Henüz bültenlerden çıkarılmış makale linki yok.</p>
+    <div class="group">
+      <h2>Ekstra Link (İsteğe Bağlı)</h2>
+      <textarea id="extra-urls" rows="2" placeholder="Bülten dışından çevirmek istediğiniz bir link varsa buraya yapıştırabilirsiniz..."></textarea>
+    </div>
+  </main>
+  <div class="bar">
+    <button onclick="submitSelected()">Seçilenleri Çevir (GitHub'a Gönder)</button>
+  </div>
+  <script>
+    function submitSelected() {
+      const checked = Array.from(document.querySelectorAll('input[name="url"]:checked')).map(el => el.value);
+      const extra = document.getElementById('extra-urls').value
+        .split(/\s+/)
+        .map(s => s.trim())
+        .filter(s => s.startsWith('http://') || s.startsWith('https://'));
+      const allUrls = [...new Set([...checked, ...extra])];
+      if (allUrls.length === 0) {
+        alert('Lütfen en az bir makale seçin veya link yapıştırın.');
+        return;
+      }
+      const title = encodeURIComponent('Çevir: ' + allUrls.length + ' Makale');
+      const body = encodeURIComponent(allUrls.join('\n'));
+      const repo = "velibakirtas/neuroscience-rss";
+      window.location.href = `https://github.com/${repo}/issues/new?title=${title}&body=${body}`;
+    }
+  </script>
+</body>
+</html>
